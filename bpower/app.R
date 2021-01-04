@@ -42,7 +42,12 @@ ui <- fluidPage(
 
         # Show a plot of the generated distribution
             mainPanel(
-                plotOutput("distPlot")
+                plotOutput("distPlot"),
+                hr(),
+                br(),
+                h4(textOutput("prior_mean",inline=TRUE)),
+                h4(textOutput("prior_mean0",inline=TRUE))
+                
             )
         )
         )
@@ -95,7 +100,9 @@ ui <- fluidPage(
                          br(),
                          h4(p("Combining the assumptions about treatment effect distribution, fraction treatable, and typical design power, we would expect to see")),
                          h4(textOutput("fraction_positive",inline=TRUE)),
-                         h4(textOutput("net_mean",inline=TRUE))
+                         h4(textOutput("net_mean",inline=TRUE)),
+                         h4(textOutput("net_mean0",inline=TRUE))
+                         
                          
                      )
                  )
@@ -130,6 +137,20 @@ server <- function(input, output) {
 
     })
     
+    output$prior_mean <- renderText({
+        x <- rbeta(10000,input$beta_a,input$beta_b)*20
+        x[runif(10000)<(input$pnull/100)]<-0
+        paste0("Mean mortality reduction (in treatable)= ", round(mean(x),1),"%") 
+        
+    })
+    
+    output$prior_mean0 <- renderText({
+        x <- rbeta(10000,input$beta_a,input$beta_b)*20
+        paste0("Mean non-zero mortality reduction (in treatable)= ", round(mean(x),1),"%") 
+        
+    })
+    
+    
     output$nettreatPlot <- renderPlot({
         x <- rbeta(10000,input$beta_a,input$beta_b)*20
         x[runif(10000)<(input$pnull/100)]<-0
@@ -159,6 +180,13 @@ server <- function(input, output) {
         y<-rbeta(10000,input$treat_a,input$treat_b)
         d<-x*y
         paste0("Mean mortality reduction (in all-comers)= ", round(mean(d),1),"%") 
+    })
+    
+    output$net_mean0<-renderText({
+        x <- rbeta(10000,input$beta_a,input$beta_b)*20
+        y<-rbeta(10000,input$treat_a,input$treat_b)
+        d<-x*y
+        paste0("Mean non-zero mortality reduction (in all-comers)= ", round(mean(d),1),"%") 
     })
 }
 
