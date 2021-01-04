@@ -94,7 +94,9 @@ ui <- fluidPage(
                          hr(),
                          br(),
                          h4(p("Combining the assumptions about treatment effect distribution, fraction treatable, and typical design power, we would expect to see")),
-                         h4(textOutput("fraction_positive",inline=TRUE))
+                         h4(textOutput("fraction_positive",inline=TRUE)),
+                         h4(textOutput("net_mean",inline=TRUE))
+                         
                      )
                  )
              )
@@ -149,6 +151,14 @@ server <- function(input, output) {
         power<-pnorm(zthing+qnorm(0.025))
         power_wrong_tail<-pnorm(zthing-qnorm(0.025),lower.tail=FALSE)
         paste("% of positive trials =", round(100*mean((power+power_wrong_tail))))
+    })
+    
+    output$net_mean<-renderText({
+        x <- rbeta(10000,input$beta_a,input$beta_b)*20
+        x[runif(10000)<(input$pnull/100)]<-0
+        y<-rbeta(10000,input$treat_a,input$treat_b)
+        d<-x*y
+        paste0("Mean mortality reduction (in all-comers)= ", round(mean(d),1),"%") 
     })
 }
 
