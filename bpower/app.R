@@ -47,7 +47,8 @@ ui <- fluidPage(
                 br(),
                 h4(textOutput("prior_mean",inline=TRUE)),
                 h4(textOutput("prior_mean0",inline=TRUE)),
-                h4(textOutput("prior_median",inline=TRUE))
+                h4(textOutput("prior_median",inline=TRUE)),
+                h4(textOutput("prior_median0",inline=TRUE)),
                 
             )
         )
@@ -154,10 +155,15 @@ server <- function(input, output) {
         
     })
     
-    
     output$prior_mean0 <- renderText({
         x <- rbeta(10000,input$beta_a,input$beta_b)*20
         paste0("Mean non-zero mortality reduction (in treatable)= ", round(mean(x),1),"%") 
+        
+    })
+    
+    output$prior_median0 <- renderText({
+        x <- rbeta(10000,input$beta_a,input$beta_b)*20
+        paste0("Median non-zero mortality reduction (in treatable)= ", round(median(x),1),"%") 
         
     })
     
