@@ -27,7 +27,7 @@ ui <- fluidPage(
     # Sidebar with a slider input for number of bins 
             sidebarLayout(
             sidebarPanel(
-                helpText("This panel sets the effect size distribution (mortality reduction) across trials, for the subset of patients who could realistically benefit from the intervention. Our prior expectation is that this is mostly non-zero, but rarely more than a 10% mortality reduction"),
+                helpText("This panel sets the effect size distribution (mortality difference) across trials, for the subset of patients who could realistically benefit from the intervention. Our prior expectation is that this is mostly non-zero, but rarely more than a 10% mortality difference"),
                 br(),
                 sliderInput("pnull",
                         "Percentage null:",
@@ -37,7 +37,10 @@ ui <- fluidPage(
                 hr(),
                 helpText("Adjust these so the graph matches your prior"),
                 sliderInput("beta_a","Beta(a,)",min=1,max=10,value=2),
-                sliderInput("beta_b","Beta(,b)",min=1,max=10,value=6)
+                sliderInput("beta_b","Beta(,b)",min=1,max=10,value=6),
+                hr(),
+                radioButtons("treatable_is_median","Summary:",c("median"="median","mean"="mean"),selected="median")
+                
             ),
 
         # Show a plot of the generated distribution
@@ -84,14 +87,15 @@ ui <- fluidPage(
                  # Sidebar with a slider input for number of bins 
                  sidebarLayout(
                      sidebarPanel(
-                         helpText("This panel sets the typical power for trials, in terms of the effect size in all-comers. For example, you might think it's typical to have 90% power for a 10% reduction in mortality, or that it's conservative to try 80% power for a 5% reduction."),
+                         helpText("This panel sets the typical power for trials, in terms of the effect size in all-comers. For example, you might think it's typical to have 90% power for a 10% difference in mortality, or that it's conservative to try 80% power for a 5% difference"),
                          hr(),
                          
                          radioButtons("power", "Power:",
                                       c("80%" = .8,
                                         "85%" = .85,
                                         "90%" = .9)),
-                         sliderInput("power_at","at all-comers mortality reduction of:",min=1,max=20,value=5)
+                         sliderInput("power_at","at all-comers mortality difference of:",min=1,max=20,value=5),
+                         radioButtons("net_is_median","Summary:",c("median"="median","mean"="mean"),selected="median")
                          
                      ),
                      
@@ -129,7 +133,7 @@ server <- function(input, output) {
         x[runif(10000)<(input$pnull/100)]<-0
 
         # draw the histogram with the specified number of bins
-        hist(x, breaks = (0:20), col = 'red', border = 'white',prob=TRUE,xlab="True treatment effect (% mortality reduction)",
+        hist(x, breaks = (0:20), col = 'red', border = 'white',prob=TRUE,xlab="True treatment effect (% mortality difference)",
              main="")
     })
     
@@ -143,27 +147,31 @@ server <- function(input, output) {
     })
     
     output$prior_mean <- renderText({
+        if (input$treatable_is_median=="median") return("")
         x <- rbeta(10000,input$beta_a,input$beta_b)*20
         x[runif(10000)<(input$pnull/100)]<-0
-        paste0("Mean mortality reduction (in treatable)= ", round(mean(x),1),"%") 
+        paste0("Mean mortality difference (in treatable)= ", round(mean(x),1),"%") 
         
     })
     output$prior_median <- renderText({
+        if (input$treatable_is_median=="mean") return("")
         x <- rbeta(10000,input$beta_a,input$beta_b)*20
         x[runif(10000)<(input$pnull/100)]<-0
-        paste0("Median mortality reduction (in treatable)= ", round(median(x),1),"%") 
+        paste0("Median mortality difference (in treatable)= ", round(median(x),1),"%") 
         
     })
     
     output$prior_mean0 <- renderText({
+        if (input$treatable_is_median=="median") return("")
         x <- rbeta(10000,input$beta_a,input$beta_b)*20
-        paste0("Mean non-zero mortality reduction (in treatable)= ", round(mean(x),1),"%") 
+        paste0("Mean non-zero mortality difference (in treatable)= ", round(mean(x),1),"%") 
         
     })
     
     output$prior_median0 <- renderText({
+        if (input$treatable_is_median=="mean") return("")
         x <- rbeta(10000,input$beta_a,input$beta_b)*20
-        paste0("Median non-zero mortality reduction (in treatable)= ", round(median(x),1),"%") 
+        paste0("Median non-zero mortality difference (in treatable)= ", round(median(x),1),"%") 
         
     })
     
@@ -173,7 +181,7 @@ server <- function(input, output) {
         x[runif(10000)<(input$pnull/100)]<-0
         y<-rbeta(10000,input$treat_a,input$treat_b)
         z<-x*y
-        hist(z,breaks = (0:20), col = 'purple', border = 'white',prob=TRUE,xlab="Net treatment effect (% mortality reduction)",
+        hist(z,breaks = (0:20), col = 'purple', border = 'white',prob=TRUE,xlab="Net treatment effect (% mortality difference)",
              main="" )
         abline(v=input$power_at,lty=2)
         
@@ -192,33 +200,37 @@ server <- function(input, output) {
     })
     
     output$net_mean<-renderText({
+        if (input$net_is_median=="median") return("")
         x <- rbeta(10000,input$beta_a,input$beta_b)*20
         x[runif(10000)<(input$pnull/100)]<-0
         y<-rbeta(10000,input$treat_a,input$treat_b)
         d<-x*y
-        paste0("Mean mortality reduction (in all-comers)= ", round(mean(d),1),"%") 
+        paste0("Mean mortality difference (in all-comers)= ", round(mean(d),1),"%") 
     })
     
     output$net_mean0<-renderText({
+        if (input$net_is_median=="median") return("")
         x <- rbeta(10000,input$beta_a,input$beta_b)*20
         y<-rbeta(10000,input$treat_a,input$treat_b)
         d<-x*y
-        paste0("Mean non-zero mortality reduction (in all-comers)= ", round(mean(d),1),"%") 
+        paste0("Mean non-zero mortality difference (in all-comers)= ", round(mean(d),1),"%") 
     })
     
     output$net_median<-renderText({
+        if (input$net_is_median=="mean") return("")
         x <- rbeta(10000,input$beta_a,input$beta_b)*20
         x[runif(10000)<(input$pnull/100)]<-0
         y<-rbeta(10000,input$treat_a,input$treat_b)
         d<-x*y
-        paste0("Median mortality reduction (in all-comers)= ", round(median(d),1),"%") 
+        paste0("Median mortality difference (in all-comers)= ", round(median(d),1),"%") 
     })
     
     output$net_median0<-renderText({
+        if (input$net_is_median=="mean") return("")
         x <- rbeta(10000,input$beta_a,input$beta_b)*20
         y<-rbeta(10000,input$treat_a,input$treat_b)
         d<-x*y
-        paste0("Median non-zero mortality reduction (in all-comers)= ", round(median(d),1),"%") 
+        paste0("Median non-zero mortality difference (in all-comers)= ", round(median(d),1),"%") 
     })
 }
 
